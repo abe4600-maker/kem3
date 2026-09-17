@@ -1,0 +1,1780 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KEM（禁煙）管理アプリ</title>
+  <style>
+    :root {
+      --bg-color: #f4f6f8;
+      --card-bg: #ffffff;
+      --text-main: #1f2937;
+      --text-sub: #6b7280;
+      --primary: #2563eb;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --border-color: #e5e7eb;
+      --accent-bg: #f3f4f6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      min-height: 100vh;
+      background-color: var(--card-bg);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 0 20px rgba(0,0,0,0.05);
+      padding-bottom: 70px;
+    }
+
+    header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      background-color: #fff;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .view-content {
+      display: none;
+      padding: 16px;
+      flex-grow: 1;
+    }
+
+    .view-content.active {
+      display: block;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      max-width: 480px;
+      height: 60px;
+      background-color: #fff;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 20;
+    }
+
+    .nav-item {
+      background: none;
+      border: none;
+      font-size: 0.7rem;
+      color: var(--text-sub);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      flex: 1;
+    }
+
+    .nav-item.active {
+      color: var(--primary);
+      font-weight: bold;
+    }
+
+    .nav-item span {
+      font-size: 1.1rem;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 8px;
+      position: relative;
+    }
+
+    .card.custom-item {
+      border-color: #93c5fd;
+      background-color: #f0f9ff;
+    }
+
+    /* --- 日次記録画面 --- */
+    .date-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+    }
+
+    .date-nav button {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      color: var(--primary);
+      cursor: pointer;
+      padding: 4px 12px;
+    }
+
+    .date-picker-wrapper {
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .hidden-date-input {
+      position: absolute;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      cursor: pointer;
+    }
+
+    .summary-card {
+      background-color: var(--accent-bg);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      text-align: center;
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+    }
+
+    .summary-item .label {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      display: block;
+    }
+
+    .summary-item .value {
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+    .value.success { color: var(--success); }
+    .value.danger { color: var(--danger); }
+
+    .action-buttons {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .btn-action {
+      flex: 1;
+      padding: 8px 4px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: #fff;
+      font-weight: bold;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-action.selected-none {
+      background-color: #e5e7eb;
+      color: #374151;
+      border-color: #d1d5db;
+    }
+
+    .btn-action.selected-pass {
+      background-color: var(--success);
+      color: #fff;
+      border-color: var(--success);
+    }
+
+    .btn-action.selected-smoke {
+      background-color: var(--danger);
+      color: #fff;
+      border-color: var(--danger);
+    }
+
+    .counter-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+      padding: 6px 12px;
+      background-color: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+    }
+
+    .counter-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--danger);
+      background-color: #fff;
+      color: var(--danger);
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .counter-btn:active {
+      background-color: var(--danger);
+      color: #fff;
+    }
+
+    .counter-display {
+      font-weight: bold;
+      font-size: 0.9rem;
+      color: var(--danger);
+    }
+
+    .memo-toggle {
+      margin-top: 8px;
+      font-size: 0.8rem;
+      color: var(--primary);
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    .memo-fields {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .memo-input {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+
+    .insert-btn-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 4px 0;
+    }
+
+    .insert-btn {
+      background-color: #fff;
+      border: 1px dashed var(--primary);
+      color: var(--primary);
+      border-radius: 12px;
+      padding: 2px 12px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .insert-btn:hover {
+      background-color: #eff6ff;
+    }
+
+    .delete-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      font-size: 1rem;
+      color: var(--text-sub);
+      cursor: pointer;
+      padding: 2px 6px;
+    }
+
+    .delete-btn:hover {
+      color: var(--danger);
+    }
+
+    /* --- 週間計画画面 --- */
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      background-color: #fff;
+    }
+
+    .week-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 0.8rem;
+    }
+
+    .week-table th, .week-table td {
+      border: 1px solid var(--border-color);
+      padding: 6px 4px;
+      text-align: left;
+    }
+
+    .week-table th {
+      background-color: var(--accent-bg);
+    }
+
+    .week-table select {
+      width: 100%;
+      padding: 4px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    /* --- 分析・推移共通 --- */
+    .weekly-status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-weight: bold;
+      font-size: 0.85rem;
+      color: white;
+      margin-top: 4px;
+    }
+    .weekly-status-badge.achieved { background-color: var(--success); }
+    .weekly-status-badge.unachieved { background-color: var(--danger); }
+
+    .diff-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      margin-top: 4px;
+    }
+    .diff-badge.plus { background-color: #d1fae5; color: #065f46; }
+    .diff-badge.minus { background-color: #fee2e2; color: #991b1b; }
+    .diff-badge.neutral { background-color: #f3f4f6; color: #374151; }
+
+    .warning-card {
+      background-color: #fffbebf5;
+      border: 1px solid #fde68a;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .warning-title {
+      font-weight: bold;
+      font-size: 0.85rem;
+      color: #b45309;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .warning-item {
+      font-size: 0.8rem;
+      color: #78350f;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dashed #fcd34d;
+      padding: 4px 0;
+    }
+    .warning-item:last-child { border-bottom: none; }
+
+    .bar-chart-item {
+      margin-bottom: 10px;
+    }
+
+    .bar-label {
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2px;
+    }
+
+    .bar-container {
+      height: 12px;
+      background-color: var(--accent-bg);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 6px;
+    }
+
+    .bar-fill.good { background-color: var(--success); }
+    .bar-fill.bad { background-color: var(--danger); }
+    .bar-fill.primary { background-color: var(--primary); }
+
+    /* スタック棒グラフ用 (推移画面) */
+    .stacked-bar-container {
+      display: flex;
+      height: 16px;
+      background-color: var(--accent-bg);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .stacked-bar-achieved {
+      background-color: var(--success);
+      height: 100%;
+      transition: width 0.3s;
+    }
+    .stacked-bar-unachieved {
+      background-color: var(--danger);
+      height: 100%;
+      transition: width 0.3s;
+    }
+
+    /* 分析画面の日付別メモ総括カード用 */
+    .daily-summary-log-item {
+      border-bottom: 1px solid var(--border-color);
+      padding: 8px 0;
+    }
+    .daily-summary-log-item:last-child {
+      border-bottom: none;
+    }
+    .log-date-header {
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: var(--primary);
+      margin-bottom: 2px;
+    }
+    .log-content-text {
+      font-size: 0.8rem;
+      color: #334155;
+      line-height: 1.3;
+      background: #f8fafc;
+      padding: 6px;
+      border-radius: 6px;
+    }
+
+    /* IF-THEN表示用スタイル */
+    .if-then-log-item {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 8px;
+      margin-bottom: 6px;
+      font-size: 0.8rem;
+    }
+
+    /* --- 設定画面 --- */
+    .master-item {
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 0;
+    }
+    .master-item:last-child {
+      border-bottom: none;
+    }
+    .master-title {
+      font-weight: bold;
+      font-size: 0.85rem;
+      color: var(--primary);
+    }
+    .master-seq {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+    .master-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .master-actions button {
+      padding: 3px 8px;
+      font-size: 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid var(--border-color);
+      background: #fff;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 10px;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn-danger {
+      width: 100%;
+      padding: 8px;
+      background-color: #fee2e2;
+      color: var(--danger);
+      border: 1px solid #fca5a5;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.8rem;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- ==================== 1. 日次記録画面 ==================== -->
+  <div id="view-daily" class="view-content active">
+    <header style="margin: -16px -16px 16px -16px;">
+      <div class="date-nav">
+        <button onclick="changeDate(-1)">＜</button>
+        <div class="date-picker-wrapper">
+          <span id="daily-date-display">2026年9月7日 (月)</span> 📅
+          <input type="date" id="daily-date-picker" class="hidden-date-input" onchange="setDateFromPicker(this.value)">
+        </div>
+        <button onclick="changeDate(1)">＞</button>
+      </div>
+      <div style="text-align: center; margin-top: 4px;">
+        <span id="pattern-badge" style="font-size: 0.75rem; background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 10px;">
+          テレワーク：① 午前商談有
+        </span>
+      </div>
+    </header>
+
+    <div class="summary-card">
+      <div class="summary-item">
+        <span class="label">シーケンス達成率</span>
+        <span class="value success" id="summary-rate">0.0% (0/0)</span>
+      </div>
+      <div class="summary-item" style="border-left: 1px solid #d1d5db; padding-left: 12px;">
+        <span class="label">本日本数</span>
+        <span class="value danger" id="summary-count">0本</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">本日出費</span>
+        <span class="value" id="summary-cost">0円</span>
+      </div>
+    </div>
+
+    <div class="insert-btn-wrap">
+      <button class="insert-btn" onclick="insertCustomSequence(0)">＋ ここに突発シーケンスを追加</button>
+    </div>
+
+    <div id="daily-sequence-list"></div>
+
+    <!-- 本日の達成ステータス表示用カード -->
+    <div id="daily-status-card" class="card" style="text-align: center; padding: 12px; margin-top: 12px; background: var(--accent-bg);">
+      <span style="font-size: 0.8rem; color: var(--text-sub); display: block; margin-bottom: 2px;">本日の目標達成ステータス</span>
+      <span id="daily-status-badge" class="weekly-status-badge unachieved" style="font-size: 0.9rem; padding: 4px 16px;">未達</span>
+    </div>
+  </div>
+
+  <!-- ==================== 2. 週間計画画面 ==================== -->
+  <div id="view-weekly" class="view-content">
+    <header style="margin: -16px -16px 16px -16px;">
+      <div class="header-title">週間予定・目標設定</div>
+    </header>
+
+    <div class="card">
+      <div class="form-group">
+        <label for="start-date">対象週の開始日 (日曜日を選択)</label>
+        <input type="date" id="start-date" class="form-control" onchange="onStartDateChange(this.value)">
+      </div>
+      
+      <div style="display: flex; gap: 8px;">
+        <div class="form-group" style="flex: 1;">
+          <label for="weekly-target-rate">目標スルー率 (%)</label>
+          <input type="number" id="weekly-target-rate" class="form-control" value="50" min="0" max="100">
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label for="weekly-target-days">目標達成日数 (日)</label>
+          <input type="number" id="weekly-target-days" class="form-control" value="4" min="0" max="7">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 8px;">曜日別シーケンス選択</div>
+      <table class="week-table">
+        <thead>
+          <tr>
+            <th style="width: 30%;">日付 / 曜日</th>
+            <th style="width: 70%;">適用シーケンスパターン</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td id="date-sun">--/-- (日)</td><td><select class="seq-select" data-day="0"></select></td></tr>
+          <tr><td id="date-mon">--/-- (月)</td><td><select class="seq-select" data-day="1"></select></td></tr>
+          <tr><td id="date-tue">--/-- (火)</td><td><select class="seq-select" data-day="2"></select></td></tr>
+          <tr><td id="date-wed">--/-- (水)</td><td><select class="seq-select" data-day="3"></select></td></tr>
+          <tr><td id="date-thu">--/-- (木)</td><td><select class="seq-select" data-day="4"></select></td></tr>
+          <tr><td id="date-fri">--/-- (金)</td><td><select class="seq-select" data-day="5"></select></td></tr>
+          <tr><td id="date-sat">--/-- (土)</td><td><select class="seq-select" data-day="6"></select></td></tr>
+        </tbody>
+      </table>
+
+      <button class="btn-primary" style="margin-top: 12px; background-color: var(--success);" onclick="saveWeeklyPlan()">💾 週間計画を保存する</button>
+    </div>
+  </div>
+
+  <!-- ==================== 3. 分析画面 (個別週間) ==================== -->
+  <div id="view-analysis" class="view-content">
+    <header style="margin: -16px -16px 16px -16px;">
+      <div class="date-nav">
+        <button onclick="changeAnalysisWeek(-1)">＜</button>
+        <div class="date-picker-wrapper">
+          <span id="analysis-week-display" style="font-size:0.9rem;">--/--/-- 週</span> 📅
+          <input type="date" id="analysis-week-picker" class="hidden-date-input" onchange="setAnalysisWeekFromPicker(this.value)">
+        </div>
+        <button onclick="changeAnalysisWeek(1)">＞</button>
+      </div>
+    </header>
+
+    <div class="card" style="text-align: center; padding: 16px; margin-top: 12px;">
+      <div style="font-size: 0.8rem; color: var(--text-sub);" id="analysis-week-range">対象期間: --/--/-- 〜 --/--/--</div>
+      
+      <div style="margin-top: 6px; display: flex; justify-content: center; align-items: center; gap: 8px;">
+        <span style="font-size: 0.85rem; font-weight: bold;">週間ステータス:</span>
+        <span id="weekly-badge" class="weekly-status-badge unachieved">未達成</span>
+      </div>
+
+      <div style="font-size: 0.75rem; color: var(--text-sub); margin-top: 4px;" id="analysis-target-desc">目標: スルー率≧50%の日が4日以上</div>
+
+      <div id="improvement-badge-container" style="margin-top: 6px;"></div>
+
+      <div style="margin-top: 12px; display: flex; justify-content: space-around; font-size: 0.85rem;">
+        <div>
+          <span style="color: var(--text-sub); display: block;">目標達成日数</span>
+          <span id="analysis-achieved-days" style="font-weight: bold; font-size: 1.1rem; color: var(--primary);">0 / 7日</span>
+        </div>
+        <div style="border-left: 1px solid var(--border-color); padding-left: 12px;">
+          <span style="color: var(--text-sub); display: block;">総喫煙本数</span>
+          <span id="analysis-total-smokes" style="font-weight: bold; font-size: 1.1rem; color: var(--danger);">0本</span>
+        </div>
+        <div style="border-left: 1px solid var(--border-color); padding-left: 12px;">
+          <span style="color: var(--text-sub); display: block;">総出費額</span>
+          <span id="analysis-total-cost" style="font-weight: bold; font-size: 1.1rem;">0円</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- スルー時IF-THEN一覧カード -->
+    <div class="card">
+      <div style="font-weight: bold; font-size: 0.85rem; margin-bottom: 8px;">💡 スルー時 IF-THEN 一覧（習慣化サポート）</div>
+      <div id="analysis-ifthen-list">
+        <div style="font-size:0.8rem; color:var(--text-sub); text-align:center;">スルーした項目のIF-THENメモがここに表示されます</div>
+      </div>
+    </div>
+
+    <div class="warning-card">
+      <div class="warning-title">⚠️ 要注意シーケンス (対象週の低スルー率場面)</div>
+      <div id="warning-list">
+        <div style="font-size:0.8rem; color:var(--text-sub);">※ 記録が登録されると表示されます。</div>
+      </div>
+    </div>
+
+    <!-- 曜日ごとのメモログ表示カード -->
+    <div class="card">
+      <div style="font-weight: bold; font-size: 0.85rem; margin-bottom: 8px;">📖 日別メモログ</div>
+      <div id="analysis-daily-logs">
+        <div style="font-size:0.8rem; color:var(--text-sub); text-align:center;">この週のメモデータはありません</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight: bold; font-size: 0.85rem; margin-bottom: 12px;">対象週のシーケンス別 スルー率</div>
+      <div id="analysis-sequence-bars">
+        <div style="font-size:0.8rem; color:var(--text-sub); text-align:center;">データがありません</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 4. 週間推移・比較画面 ==================== -->
+  <div id="view-trends" class="view-content">
+    <header style="margin: -16px -16px 16px -16px;">
+      <div class="header-title">週間比較・推移データ</div>
+    </header>
+
+    <div class="card" style="margin-top: 12px;">
+      <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 12px;">過去5週間の達成率・本数・日単位スルー状況</div>
+      <div id="trends-list"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 5. 設定画面 ==================== -->
+  <div id="view-master" class="view-content">
+    <header style="margin: -16px -16px 16px -16px;">
+      <div class="header-title">マスタ・設定（最大99パターン）</div>
+    </header>
+
+    <div class="card">
+      <div class="form-group" style="margin-bottom:0;">
+        <label>タバコ1本あたりの単価 (円)</label>
+        <input type="number" id="unit-price" class="form-control" value="25" onchange="saveUnitPrice(this.value); calculateSummary(); updateAnalysisView();">
+      </div>
+    </div>
+
+    <!-- 週計画の初期値パターン設定エリア -->
+    <div class="card">
+      <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 8px;">🗓️ 週計画の初期値パターン設定</div>
+      <div style="font-size: 0.75rem; color: var(--text-sub); margin-bottom: 8px;">新しい週を作成したときのデフォルトパターンを設定します。</div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.8rem;">
+          <span>日曜日</span><select id="def-plan-0" class="form-control" style="width:65%; padding:4px;" onchange="saveDefaultWeeklyPlanConfig()"></select>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.8rem;">
+          <span>月曜日</span><select id="def-plan-1" class="form-control" style="width:65%; padding:4px;" onchange="saveDefaultWeeklyPlanConfig()"></select>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.8rem;">
+          <span>火曜日</span><select id="def-plan-2" class="form-control" style="width:65%; padding:4px;" onchange="saveDefaultWeeklyPlanConfig()"></select>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.8rem;">
+          <span>水曜日</span><select id="def-plan-3" class="form-control" style="width:65%; padding:4px;" onchange="saveDefaultWeeklyPlanConfig()"></select>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.8rem;">
+          <span>木曜日</span><select id="def-plan-4" class="form-control" style="width:65%; padding:4px;" onchange="saveDefaultWeeklyPlanConfig()"></select>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.8rem;">
+          <span>金曜日</span><select id="def-plan-5" class="form-control" style="width:65%; padding:4px;" onchange="saveDefaultWeeklyPlanConfig()"></select>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.8rem;">
+          <span>土曜日</span><select id="def-plan-6" class="form-control" style="width:65%; padding:4px;" onchange="saveDefaultWeeklyPlanConfig()"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <button class="btn-primary" onclick="toggleMemo('add-master-form')">＋ 新規シーケンスパターンを追加</button>
+      
+      <div id="add-master-form" class="hidden" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border-color);">
+        <input type="hidden" id="edit-pattern-id" value="">
+        <div class="form-group">
+          <label>大分類</label>
+          <select class="form-control" id="new-seq-cat">
+            <option>出社</option>
+            <option>テレワーク</option>
+            <option>休日</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>パターン名</label>
+          <input type="text" class="form-control" placeholder="例：⑤ 残業有パターン" id="new-seq-name">
+        </div>
+        <div class="form-group">
+          <label>シーケンス（カンマ区切りで入力）</label>
+          <textarea class="form-control" rows="2" placeholder="朝, 出勤前(外出時), 昼休憩, 夜残業, 退勤" id="new-seq-items"></textarea>
+        </div>
+        <button class="btn-primary" id="btn-save-master" style="background-color: var(--success);" onclick="saveMasterPattern()">登録する</button>
+        <button class="btn-danger" id="btn-cancel-edit" style="display:none; margin-top:6px;" onclick="cancelEditMaster()">編集をキャンセル</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 8px;">登録済みパターン一覧 (<span id="master-count">0</span>/99)</div>
+      <div id="master-list"></div>
+    </div>
+
+    <button class="btn-danger" onclick="clearAllData()">⚠️ 全保存データを初期化</button>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="switchView('daily', this)">
+      <span>📅</span>日次記録
+    </button>
+    <button class="nav-item" onclick="switchView('weekly', this)">
+      <span>🗓️</span>計画
+    </button>
+    <button class="nav-item" onclick="switchView('analysis', this)">
+      <span>📊</span>分析
+    </button>
+    <button class="nav-item" onclick="switchView('trends', this)">
+      <span>📈</span>推移
+    </button>
+    <button class="nav-item" onclick="switchView('master', this)">
+      <span>⚙️</span>設定
+    </button>
+  </nav>
+
+</div>
+
+<script>
+  // 初期デフォルトデータ
+  const DEFAULT_MASTER_PATTERNS = [
+    { id: "P-01", cat: "休日", name: "共通(土日/長期休暇)", items: ["朝"] },
+    { id: "P-02", cat: "出社", name: "① 午前商談有", items: ["朝", "出勤前（外出時）", "出勤前（出社時）", "午前商談前", "午前商談後", "昼休憩", "午後休憩", "退勤", "帰宅前"] },
+    { id: "P-03", cat: "出社", name: "② 午後商談有", items: ["朝", "出勤前（外出時）", "出勤前（出社時）", "午前休憩", "昼休憩", "午後商談前", "午後商談後", "退勤", "帰宅前"] },
+    { id: "P-04", cat: "出社", name: "③ 午前午後商談有", items: ["朝", "出勤前（外出時）", "出勤前（出社時）", "午前商談前", "午前商談後", "昼休憩", "午後商談前", "午後商談後", "退勤", "帰宅前"] },
+    { id: "P-05", cat: "出社", name: "④ 商談無し", items: ["朝", "出勤前（外出時）", "出勤前（出社時）", "午前休憩", "昼休憩", "午後休憩", "退勤", "帰宅前"] },
+    { id: "P-06", cat: "テレワーク", name: "① 午前商談有", items: ["朝", "出勤前（外出時）", "午前商談前", "午前商談後", "昼休憩", "午後休憩", "退勤"] },
+    { id: "P-07", cat: "テレワーク", name: "② 午後商談有", items: ["朝", "出勤前（外出時）", "午前休憩", "昼休憩", "午後商談前", "午後商談後", "退勤"] },
+    { id: "P-08", cat: "テレワーク", name: "③ 午前午後商談有", items: ["朝", "出勤前（外出時）", "午前商談前", "午前商談後", "昼休憩", "午後商談前", "午後商談後", "退勤"] },
+    { id: "P-09", cat: "テレワーク", name: "④ 商談無し", items: ["朝", "出勤前（外出時）", "午前休憩", "昼休憩", "午後休憩", "退勤", "帰宅前"] }
+  ];
+
+  const DEFAULT_WEEKLY_PLAN = {
+    0: "P-01", 1: "P-06", 2: "P-06", 3: "P-06", 4: "P-06", 5: "P-02", 6: "P-01"
+  };
+
+  // アプリ内状態
+  let masterPatterns = [];
+  let weeklyPlansByWeek = {}; 
+  let weeklyTargetsByWeek = {}; 
+  let defaultWeeklyConfig = {};
+  let dailyStates = {};
+  let dailyCustomLists = {};
+  let dailyMemos = {};
+  let currentDate = new Date();
+  let analysisSelectedSunday = getSundayOfDate(currentDate);
+
+  // localStorage 永続化キー
+  const STORAGE_KEY_MASTER = 'kem_master_patterns';
+  const STORAGE_KEY_WEEKLY_PLANS = 'kem_weekly_plans_by_week';
+  const STORAGE_KEY_WEEKLY_TARGETS = 'kem_weekly_targets_by_week';
+  const STORAGE_KEY_DEF_WEEKLY = 'kem_default_weekly_config';
+  const STORAGE_KEY_STATES = 'kem_daily_states';
+  const STORAGE_KEY_LISTS  = 'kem_daily_lists';
+  const STORAGE_KEY_MEMOS  = 'kem_daily_memos';
+  const STORAGE_KEY_PRICE  = 'kem_unit_price';
+  const STORAGE_KEY_START  = 'kem_start_date';
+
+  window.onload = function() {
+    loadAllData();
+    renderMasterList();
+    renderDefaultWeeklySelects();
+
+    const startDateInput = document.getElementById('start-date');
+    if (!startDateInput.value) {
+      const sun = getSundayOfDate(new Date());
+      startDateInput.value = formatDateString(sun);
+    }
+    
+    autoFillDates(startDateInput.value);
+    loadWeeklyPlanForDate(new Date(startDateInput.value));
+    analysisSelectedSunday = getSundayOfDate(new Date(startDateInput.value));
+
+    updateDailyView();
+  };
+
+  /* ==================== ユーティリティ ==================== */
+  function getSundayOfDate(d) {
+    const date = new Date(d);
+    const day = date.getDay();
+    const diff = date.getDate() - day;
+    return new Date(date.setDate(diff));
+  }
+
+  function formatDateKey(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}${m}${d}`;
+  }
+
+  function formatDateString(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  /* ==================== localStorage ロード＆セーブ ==================== */
+  function loadAllData() {
+    const savedMaster = localStorage.getItem(STORAGE_KEY_MASTER);
+    masterPatterns = savedMaster ? JSON.parse(savedMaster) : JSON.parse(JSON.stringify(DEFAULT_MASTER_PATTERNS));
+
+    const savedDefWeekly = localStorage.getItem(STORAGE_KEY_DEF_WEEKLY);
+    defaultWeeklyConfig = savedDefWeekly ? JSON.parse(savedDefWeekly) : JSON.parse(JSON.stringify(DEFAULT_WEEKLY_PLAN));
+
+    const savedWeeklyPlans = localStorage.getItem(STORAGE_KEY_WEEKLY_PLANS);
+    weeklyPlansByWeek = savedWeeklyPlans ? JSON.parse(savedWeeklyPlans) : {};
+
+    const savedWeeklyTargets = localStorage.getItem(STORAGE_KEY_WEEKLY_TARGETS);
+    weeklyTargetsByWeek = savedWeeklyTargets ? JSON.parse(savedWeeklyTargets) : {};
+
+    const savedStates = localStorage.getItem(STORAGE_KEY_STATES);
+    dailyStates = savedStates ? JSON.parse(savedStates) : {};
+
+    const savedLists = localStorage.getItem(STORAGE_KEY_LISTS);
+    dailyCustomLists = savedLists ? JSON.parse(savedLists) : {};
+
+    const savedMemos = localStorage.getItem(STORAGE_KEY_MEMOS);
+    dailyMemos = savedMemos ? JSON.parse(savedMemos) : {};
+
+    const savedPrice = localStorage.getItem(STORAGE_KEY_PRICE);
+    if (savedPrice) {
+      document.getElementById('unit-price').value = savedPrice;
+    }
+
+    const savedStart = localStorage.getItem(STORAGE_KEY_START);
+    if (savedStart) {
+      document.getElementById('start-date').value = savedStart;
+    }
+  }
+
+  function saveData(key, data) {
+    localStorage.setItem(key, JSON.stringify(data));
+  }
+
+  function saveUnitPrice(val) {
+    localStorage.setItem(STORAGE_KEY_PRICE, val);
+  }
+
+  function clearAllData() {
+    if (confirm("すべての保存データを削除して初期状態に戻しますか？")) {
+      localStorage.clear();
+      location.reload();
+    }
+  }
+
+  /* ==================== 週別データの取得・管理ヘルパー ==================== */
+  function getWeeklyPlanObj(sundayDate) {
+    const key = formatDateKey(sundayDate);
+    if (!weeklyPlansByWeek[key]) {
+      weeklyPlansByWeek[key] = JSON.parse(JSON.stringify(defaultWeeklyConfig));
+    }
+    return weeklyPlansByWeek[key];
+  }
+
+  function getWeeklyTargetObj(sundayDate) {
+    const key = formatDateKey(sundayDate);
+    if (!weeklyTargetsByWeek[key]) {
+      weeklyTargetsByWeek[key] = { targetRate: 50, targetDays: 4 };
+    }
+    return weeklyTargetsByWeek[key];
+  }
+
+  /* ==================== 週間計画画面の日付変更ハンドラ ==================== */
+  function onStartDateChange(val) {
+    if (!val) return;
+    localStorage.setItem(STORAGE_KEY_START, val);
+    const sunday = getSundayOfDate(new Date(val));
+    autoFillDates(formatDateString(sunday));
+    loadWeeklyPlanForDate(sunday);
+  }
+
+  /* ==================== マスタパターン CRUD ==================== */
+  function saveMasterPattern() {
+    const editId = document.getElementById('edit-pattern-id').value;
+    const cat = document.getElementById('new-seq-cat').value;
+    const name = document.getElementById('new-seq-name').value.trim();
+    const itemsRaw = document.getElementById('new-seq-items').value.trim();
+
+    if (!name || !itemsRaw) {
+      alert("パターン名とシーケンス項目を入力してください。");
+      return;
+    }
+
+    const items = itemsRaw.split(',').map(s => s.trim()).filter(s => s.length > 0);
+
+    if (editId) {
+      const pattern = masterPatterns.find(p => p.id === editId);
+      if (pattern) {
+        pattern.cat = cat;
+        pattern.name = name;
+        pattern.items = items;
+      }
+    } else {
+      if (masterPatterns.length >= 99) {
+        alert("登録できるパターンは最大99個までです。");
+        return;
+      }
+      const newId = `P-${String(masterPatterns.length + 1).padStart(2, '0')}`;
+      masterPatterns.push({ id: newId, cat, name, items });
+    }
+
+    saveData(STORAGE_KEY_MASTER, masterPatterns);
+    renderMasterList();
+    renderDefaultWeeklySelects();
+    cancelEditMaster();
+  }
+
+  function editMasterPattern(id) {
+    const p = masterPatterns.find(pattern => pattern.id === id);
+    if (!p) return;
+
+    document.getElementById('edit-pattern-id').value = p.id;
+    document.getElementById('new-seq-cat').value = p.cat;
+    document.getElementById('new-seq-name').value = p.name;
+    document.getElementById('new-seq-items').value = p.items.join(', ');
+
+    document.getElementById('btn-save-master').innerText = "更新する";
+    document.getElementById('btn-cancel-edit').style.display = "block";
+    document.getElementById('add-master-form').classList.remove('hidden');
+  }
+
+  function cancelEditMaster() {
+    document.getElementById('edit-pattern-id').value = "";
+    document.getElementById('new-seq-cat').value = "出社";
+    document.getElementById('new-seq-name').value = "";
+    document.getElementById('new-seq-items').value = "";
+
+    document.getElementById('btn-save-master').innerText = "登録する";
+    document.getElementById('btn-cancel-edit').style.display = "none";
+    document.getElementById('add-master-form').classList.add('hidden');
+  }
+
+  function deleteMasterPattern(id) {
+    if (masterPatterns.length <= 1) {
+      alert("最後のパターンは削除できません。");
+      return;
+    }
+    if (!confirm("このパターンを削除しますか？")) return;
+
+    masterPatterns = masterPatterns.filter(p => p.id !== id);
+    saveData(STORAGE_KEY_MASTER, masterPatterns);
+    renderMasterList();
+    renderDefaultWeeklySelects();
+  }
+
+  /* ==================== 日次記録ロジック ==================== */
+  function getDailyItems(dateObj) {
+    const dateStr = formatDateKey(dateObj);
+    if (dailyCustomLists[dateStr]) {
+      return dailyCustomLists[dateStr];
+    }
+    
+    const sunday = getSundayOfDate(dateObj);
+    const planObj = getWeeklyPlanObj(sunday);
+    const dayOfWeek = dateObj.getDay();
+    const selectedPatternId = planObj[dayOfWeek] || masterPatterns[0].id;
+    const pattern = masterPatterns.find(p => p.id === selectedPatternId) || masterPatterns[0];
+
+    const list = pattern.items.map((name, idx) => ({
+      id: `seq_${idx}_${Date.now()}`,
+      name: name,
+      isCustom: false
+    }));
+
+    dailyCustomLists[dateStr] = list;
+    saveData(STORAGE_KEY_LISTS, dailyCustomLists);
+    return list;
+  }
+
+  function updateDailyView() {
+    updateDailyDateDisplay();
+
+    const sunday = getSundayOfDate(currentDate);
+    const planObj = getWeeklyPlanObj(sunday);
+    const dayOfWeek = currentDate.getDay();
+    const selectedPatternId = planObj[dayOfWeek] || masterPatterns[0].id;
+    const pattern = masterPatterns.find(p => p.id === selectedPatternId) || masterPatterns[0];
+
+    document.getElementById('pattern-badge').innerText = `${pattern.cat}：${pattern.name}`;
+
+    const items = getDailyItems(currentDate);
+    const seqContainer = document.getElementById('daily-sequence-list');
+    seqContainer.innerHTML = '';
+
+    items.forEach((item, index) => {
+      const dateStr = formatDateKey(currentDate);
+      const stateKey = `${dateStr}_${item.id}`;
+      const state = dailyStates[stateKey] || { status: 'none', count: 0 };
+      const memoObj = dailyMemos[stateKey] || { situation: '', physical: '', mental: '', ifthen: '' };
+
+      const card = document.createElement('div');
+      card.className = `card ${item.isCustom ? 'custom-item' : ''}`;
+      
+      let counterHtml = '';
+      if (state.status === 'smoke') {
+        counterHtml = `
+          <div class="counter-wrapper">
+            <span style="font-size: 0.8rem; color: var(--text-sub);">喫煙本数:</span>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <button class="counter-btn" onclick="changeCount('${stateKey}', -1)">-</button>
+              <span class="counter-display">${state.count} 本</span>
+              <button class="counter-btn" onclick="changeCount('${stateKey}', 1)">+</button>
+            </div>
+          </div>
+        `;
+      }
+
+      let deleteBtnHtml = `<button class="delete-btn" onclick="deleteSequence('${item.id}')" title="削除">🗑️</button>`;
+
+      card.innerHTML = `
+        ${deleteBtnHtml}
+        <div style="font-weight: bold; font-size: 0.9rem; padding-right: 28px;">
+          ${index + 1}. ${item.name} ${item.isCustom ? '<span style="font-size:0.75rem; color:var(--primary);">(追加)</span>' : ''}
+        </div>
+        <div class="action-buttons">
+          <button class="btn-action ${state.status === 'none' ? 'selected-none' : ''}" onclick="selectStatus('${stateKey}', 'none')">⚪ 未登録</button>
+          <button class="btn-action ${state.status === 'pass' ? 'selected-pass' : ''}" onclick="selectStatus('${stateKey}', 'pass')">🚭 スルー</button>
+          <button class="btn-action ${state.status === 'smoke' ? 'selected-smoke' : ''}" onclick="selectStatus('${stateKey}', 'smoke')">🚬 喫煙</button>
+        </div>
+        ${counterHtml}
+        <button class="memo-toggle" onclick="toggleMemo('memo-${stateKey}')">✏️ メモ・IF-THENを表示</button>
+        <div id="memo-${stateKey}" class="memo-fields hidden">
+          <input type="text" class="memo-input" id="sit-${stateKey}" placeholder="状況メモ" value="${escapeHtml(memoObj.situation)}" oninput="saveMemoField('${stateKey}')">
+          <input type="text" class="memo-input" id="phy-${stateKey}" placeholder="身体メモ" value="${escapeHtml(memoObj.physical)}" oninput="saveMemoField('${stateKey}')">
+          <input type="text" class="memo-input" id="men-${stateKey}" placeholder="メンタルメモ" value="${escapeHtml(memoObj.mental)}" oninput="saveMemoField('${stateKey}')">
+          <input type="text" class="memo-input" id="ifthen-${stateKey}" placeholder="IF-THEN (もし〇〇なら、△△する)" value="${escapeHtml(memoObj.ifthen)}" oninput="saveMemoField('${stateKey}')" style="border-color: #86efac; background: #f0fdf4;">
+        </div>
+      `;
+
+      seqContainer.appendChild(card);
+
+      const insertWrap = document.createElement('div');
+      insertWrap.className = 'insert-btn-wrap';
+      insertWrap.innerHTML = `<button class="insert-btn" onclick="insertCustomSequence(${index + 1})">＋ ここに突発シーケンスを追加</button>`;
+      seqContainer.appendChild(insertWrap);
+    });
+
+    calculateSummary();
+  }
+
+  function escapeHtml(str) {
+    return (str || '').replace(/"/g, '&quot;');
+  }
+
+  function saveMemoField(stateKey) {
+    const sit = document.getElementById(`sit-${stateKey}`).value;
+    const phy = document.getElementById(`phy-${stateKey}`).value;
+    const men = document.getElementById(`men-${stateKey}`).value;
+    const ifthen = document.getElementById(`ifthen-${stateKey}`).value;
+
+    dailyMemos[stateKey] = { situation: sit, physical: phy, mental: men, ifthen: ifthen };
+    saveData(STORAGE_KEY_MEMOS, dailyMemos);
+  }
+
+  function insertCustomSequence(targetIndex) {
+    const customName = prompt("追加するシーケンス名を入力してください:", "突発休憩");
+    if (!customName) return;
+
+    const items = getDailyItems(currentDate);
+
+    const newItem = {
+      id: `custom_${Date.now()}`,
+      name: customName,
+      isCustom: true
+    };
+
+    items.splice(targetIndex, 0, newItem);
+    saveData(STORAGE_KEY_LISTS, dailyCustomLists);
+
+    updateDailyView();
+  }
+
+  function deleteSequence(itemId) {
+    if (!confirm("このシーケンス項目を削除しますか？")) return;
+
+    const dateStr = formatDateKey(currentDate);
+    const items = getDailyItems(currentDate);
+    
+    dailyCustomLists[dateStr] = items.filter(item => item.id !== itemId);
+    delete dailyStates[`${dateStr}_${itemId}`];
+    delete dailyMemos[`${dateStr}_${itemId}`];
+    
+    saveData(STORAGE_KEY_LISTS, dailyCustomLists);
+    saveData(STORAGE_KEY_STATES, dailyStates);
+    saveData(STORAGE_KEY_MEMOS, dailyMemos);
+
+    updateDailyView();
+  }
+
+  function selectStatus(key, status) {
+    if (!dailyStates[key]) dailyStates[key] = { status: 'none', count: 0 };
+    
+    dailyStates[key].status = status;
+    if (status === 'smoke') {
+      if (dailyStates[key].count === 0) dailyStates[key].count = 1;
+    } else {
+      dailyStates[key].count = 0;
+    }
+
+    saveData(STORAGE_KEY_STATES, dailyStates);
+    updateDailyView();
+  }
+
+  function changeCount(key, delta) {
+    if (dailyStates[key] && dailyStates[key].status === 'smoke') {
+      dailyStates[key].count += delta;
+      if (dailyStates[key].count <= 0) {
+        dailyStates[key].status = 'none';
+        dailyStates[key].count = 0;
+      }
+      saveData(STORAGE_KEY_STATES, dailyStates);
+      updateDailyView();
+    }
+  }
+
+  function calculateSummary() {
+    const dateStr = formatDateKey(currentDate);
+    const items = getDailyItems(currentDate);
+    const total = items.length;
+    
+    let passes = 0;
+    let smokes = 0;
+
+    items.forEach(item => {
+      const key = `${dateStr}_${item.id}`;
+      const st = dailyStates[key];
+      if (st) {
+        if (st.status === 'pass') passes++;
+        if (st.status === 'smoke') smokes += st.count;
+      }
+    });
+
+    const rate = total > 0 ? (passes / total) * 100 : 0;
+    const unitPrice = parseInt(document.getElementById('unit-price').value) || 25;
+
+    document.getElementById('summary-rate').innerText = `${rate.toFixed(1)}% (${passes}/${total})`;
+    document.getElementById('summary-count').innerText = `${smokes}本`;
+    document.getElementById('summary-cost').innerText = `${smokes * unitPrice}円`;
+
+    // 本日の達成/未達判定
+    const sunday = getSundayOfDate(currentDate);
+    const targetObj = getWeeklyTargetObj(sunday);
+    const statusBadge = document.getElementById('daily-status-badge');
+
+    if (total > 0 && rate >= targetObj.targetRate) {
+      statusBadge.innerText = "達成 🎉";
+      statusBadge.className = "weekly-status-badge achieved";
+    } else {
+      statusBadge.innerText = "未達";
+      statusBadge.className = "weekly-status-badge unachieved";
+    }
+  }
+
+  /* ==================== 集計計算共通ヘルパー ==================== */
+  function calculateWeekMetrics(sundayDate) {
+    const targetObj = getWeeklyTargetObj(sundayDate);
+    let achievedDays = 0;
+    let unachievedDays = 0;
+    let totalSmokes = 0;
+    let totalPasses = 0;
+    let totalSequences = 0;
+    let seqStats = {};
+    let dailyLogs = [];
+    let ifthenLogs = [];
+
+    for (let i = 0; i < 7; i++) {
+      const targetDate = new Date(sundayDate);
+      targetDate.setDate(sundayDate.getDate() + i);
+      const dateStr = formatDateKey(targetDate);
+
+      const items = getDailyItems(targetDate);
+      let dayPasses = 0;
+      let daySmokes = 0;
+      let dayHasMemos = false;
+      let dayMemoTexts = [];
+
+      items.forEach(item => {
+        const key = `${dateStr}_${item.id}`;
+        const st = dailyStates[key];
+        const memo = dailyMemos[key];
+
+        if (!seqStats[item.name]) {
+          seqStats[item.name] = { pass: 0, total: 0 };
+        }
+        seqStats[item.name].total += 1;
+        totalSequences++;
+
+        if (st) {
+          if (st.status === 'pass') {
+            dayPasses++;
+            totalPasses++;
+            seqStats[item.name].pass += 1;
+
+            if (memo && memo.ifthen && memo.ifthen.trim() !== '') {
+              const m = targetDate.getMonth() + 1;
+              const d = targetDate.getDate();
+              const dayLabels = ['日', '月', '火', '水', '木', '金', '土'];
+              ifthenLogs.push({
+                dateLabel: `${m}/${d} (${dayLabels[targetDate.getDay()]})`,
+                seqName: item.name,
+                ifthen: memo.ifthen
+              });
+            }
+          }
+          if (st.status === 'smoke') {
+            daySmokes += st.count;
+          }
+        }
+
+        if (memo && (memo.situation || memo.physical || memo.mental || memo.ifthen)) {
+          dayHasMemos = true;
+          let parts = [];
+          if (memo.situation) parts.push(`状:${memo.situation}`);
+          if (memo.physical) parts.push(`体:${memo.physical}`);
+          if (memo.mental) parts.push(`心:${memo.mental}`);
+          if (memo.ifthen) parts.push(`IF:${memo.ifthen}`);
+          dayMemoTexts.push(`[${item.name}] ${parts.join(', ')}`);
+        }
+      });
+
+      totalSmokes += daySmokes;
+      const dayRate = items.length > 0 ? (dayPasses / items.length) * 100 : 0;
+      
+      if (items.length > 0 && dayRate >= targetObj.targetRate) {
+        achievedDays++;
+      } else {
+        unachievedDays++;
+      }
+
+      if (dayHasMemos) {
+        const m = targetDate.getMonth() + 1;
+        const d = targetDate.getDate();
+        const dayLabels = ['日', '月', '火', '水', '木', '金', '土'];
+        dailyLogs.push({
+          dateLabel: `${m}/${d} (${dayLabels[targetDate.getDay()]})`,
+          summary: dayMemoTexts.join(' / ')
+        });
+      }
+    }
+
+    const overallRate = totalSequences > 0 ? Math.round((totalPasses / totalSequences) * 100) : 0;
+
+    return {
+      achievedDays,
+      unachievedDays,
+      totalSmokes,
+      totalPasses,
+      totalSequences,
+      overallRate,
+      seqStats,
+      dailyLogs,
+      ifthenLogs,
+      targetObj
+    };
+  }
+
+  /* ==================== 分析画面（個別週間） ==================== */
+  function changeAnalysisWeek(offsetWeeks) {
+    analysisSelectedSunday.setDate(analysisSelectedSunday.getDate() + (offsetWeeks * 7));
+    updateAnalysisView();
+  }
+
+  function setAnalysisWeekFromPicker(dateStr) {
+    if (!dateStr) return;
+    const parts = dateStr.split('-');
+    const pickedDate = new Date(parts[0], parts[1] - 1, parts[2]);
+    analysisSelectedSunday = getSundayOfDate(pickedDate);
+    updateAnalysisView();
+  }
+
+  function updateAnalysisView() {
+    const startDate = analysisSelectedSunday;
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 6);
+
+    const sYear = startDate.getFullYear();
+    const sMonth = String(startDate.getMonth() + 1).padStart(2, '0');
+    const sDate = String(startDate.getDate()).padStart(2, '0');
+
+    const eYear = endDate.getFullYear();
+    const eMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+    const eDate = String(endDate.getDate()).padStart(2, '0');
+
+    document.getElementById('analysis-week-display').innerText = `${sYear}/${sMonth}/${sDate} 週`;
+    document.getElementById('analysis-week-picker').value = `${sYear}-${sMonth}-${sDate}`;
+    document.getElementById('analysis-week-range').innerText = `対象期間: ${sYear}/${sMonth}/${sDate} 〜 ${eYear}/${eMonth}/${eDate}`;
+
+    const currentMetrics = calculateWeekMetrics(startDate);
+    const unitPrice = parseInt(document.getElementById('unit-price').value) || 25;
+
+    document.getElementById('analysis-achieved-days').innerText = `${currentMetrics.achievedDays} / 7日`;
+    document.getElementById('analysis-total-smokes').innerText = `${currentMetrics.totalSmokes}本`;
+    document.getElementById('analysis-total-cost').innerText = `${currentMetrics.totalSmokes * unitPrice}円`;
+
+    document.getElementById('analysis-target-desc').innerText = `目標: スルー率≧${currentMetrics.targetObj.targetRate}%の日が ${currentMetrics.targetObj.targetDays}日以上`;
+
+    const badgeEl = document.getElementById('weekly-badge');
+    if (currentMetrics.achievedDays >= currentMetrics.targetObj.targetDays) {
+      badgeEl.innerText = "🎉 週間目標達成！";
+      badgeEl.className = "weekly-status-badge achieved";
+    } else {
+      badgeEl.innerText = "⚠️ 週間目標未達成";
+      badgeEl.className = "weekly-status-badge unachieved";
+    }
+
+    const prevSunday = new Date(startDate);
+    prevSunday.setDate(startDate.getDate() - 7);
+    const prevMetrics = calculateWeekMetrics(prevSunday);
+    const impContainer = document.getElementById('improvement-badge-container');
+
+    if (prevMetrics.totalSequences > 0 || currentMetrics.totalSequences > 0) {
+      const rateDiff = currentMetrics.overallRate - prevMetrics.overallRate;
+      const smokeDiff = currentMetrics.totalSmokes - prevMetrics.totalSmokes;
+
+      let badgeClass = "neutral";
+      let text = `前週比: 達成率 ${rateDiff >= 0 ? '+' : ''}${rateDiff}%`;
+      
+      if (rateDiff > 0) badgeClass = "plus";
+      else if (rateDiff < 0) badgeClass = "minus";
+
+      let smokeText = smokeDiff < 0 ? ` (喫煙本数 ${Math.abs(smokeDiff)}本減 👏)` : smokeDiff > 0 ? ` (喫煙本数 ${smokeDiff}本増)` : '';
+
+      impContainer.innerHTML = `<span class="diff-badge ${badgeClass}">${text}${smokeText}</span>`;
+    } else {
+      impContainer.innerHTML = '';
+    }
+
+    const ifthenContainer = document.getElementById('analysis-ifthen-list');
+    ifthenContainer.innerHTML = '';
+    if (currentMetrics.ifthenLogs.length > 0) {
+      currentMetrics.ifthenLogs.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'if-then-log-item';
+        div.innerHTML = `<strong>${item.dateLabel} [${item.seqName}]</strong><br>👉 ${item.ifthen}`;
+        ifthenContainer.appendChild(div);
+      });
+    } else {
+      ifthenContainer.innerHTML = '<div style="font-size:0.8rem; color:var(--text-sub); text-align:center;">この週のスルー時IF-THEN登録はありません</div>';
+    }
+
+    const warningListEl = document.getElementById('warning-list');
+    const logsContainer = document.getElementById('analysis-daily-logs');
+    const barsContainer = document.getElementById('analysis-sequence-bars');
+    
+    warningListEl.innerHTML = '';
+    logsContainer.innerHTML = '';
+    barsContainer.innerHTML = '';
+
+    if (currentMetrics.dailyLogs.length > 0) {
+      currentMetrics.dailyLogs.forEach(log => {
+        const logItem = document.createElement('div');
+        logItem.className = 'daily-summary-log-item';
+        logItem.innerHTML = `
+          <div class="log-date-header">${log.dateLabel}</div>
+          <div class="log-content-text">${log.summary}</div>
+        `;
+        logsContainer.appendChild(logItem);
+      });
+    } else {
+      logsContainer.innerHTML = '<div style="font-size:0.8rem; color:var(--text-sub); text-align:center;">この週に保存されたメモはありません</div>';
+    }
+
+    let seqArray = [];
+    Object.keys(currentMetrics.seqStats).forEach(name => {
+      const stat = currentMetrics.seqStats[name];
+      const rate = stat.total > 0 ? Math.round((stat.pass / stat.total) * 100) : 0;
+      seqArray.push({ name: name, rate: rate, pass: stat.pass, total: stat.total });
+    });
+
+    if (seqArray.length === 0) {
+      barsContainer.innerHTML = '<div style="font-size:0.8rem; color:var(--text-sub); text-align:center;">データがありません</div>';
+      warningListEl.innerHTML = '<div style="font-size:0.8rem; color:var(--text-sub);">記録が登録されると要注意シーケンスが表示されます。</div>';
+      return;
+    }
+
+    seqArray.sort((a, b) => a.rate - b.rate);
+
+    const warningSeqs = seqArray.filter(s => s.rate < currentMetrics.targetObj.targetRate).slice(0, 3);
+    if (warningSeqs.length > 0) {
+      warningSeqs.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'warning-item';
+        div.innerHTML = `<span>・${s.name}</span><strong>スルー率 ${s.rate}% (${s.pass}/${s.total})</strong>`;
+        warningListEl.appendChild(div);
+      });
+    } else {
+      warningListEl.innerHTML = '<div style="font-size:0.8rem; color:var(--success); font-weight:bold;">✨ 要注意シーケンスはありません！良好なペースです。</div>';
+    }
+
+    seqArray.forEach(s => {
+      const isGood = s.rate >= currentMetrics.targetObj.targetRate;
+      const barItem = document.createElement('div');
+      barItem.className = 'bar-chart-item';
+      barItem.innerHTML = `
+        <div class="bar-label">
+          <span>${s.name}</span>
+          <span>${s.rate}% (${s.pass}/${s.total})</span>
+        </div>
+        <div class="bar-container">
+          <div class="bar-fill ${isGood ? 'good' : 'bad'}" style="width: ${s.rate}%;"></div>
+        </div>
+      `;
+      barsContainer.appendChild(barItem);
+    });
+  }
+
+  /* ==================== 5. 週間推移・比較画面 ==================== */
+  function updateTrendsView() {
+    const container = document.getElementById('trends-list');
+    container.innerHTML = '';
+
+    const baseSunday = getSundayOfDate(currentDate);
+    const weeksData = [];
+
+    for (let i = 4; i >= 0; i--) {
+      const targetSun = new Date(baseSunday);
+      targetSun.setDate(baseSunday.getDate() - (i * 7));
+      const metrics = calculateWeekMetrics(targetSun);
+
+      const sMonth = String(targetSun.getMonth() + 1).padStart(2, '0');
+      const sDate = String(targetSun.getDate()).padStart(2, '0');
+
+      weeksData.push({
+        label: `${sMonth}/${sDate} 週`,
+        sunday: targetSun,
+        metrics: metrics
+      });
+    }
+
+    const unitPrice = parseInt(document.getElementById('unit-price').value) || 25;
+
+    weeksData.forEach((w, index) => {
+      const m = w.metrics;
+      let compHtml = '';
+
+      if (index > 0) {
+        const prevM = weeksData[index - 1].metrics;
+        const rateDiff = m.overallRate - prevM.overallRate;
+        const smokeDiff = m.totalSmokes - prevM.totalSmokes;
+
+        if (prevM.totalSequences > 0 || m.totalSequences > 0) {
+          const badgeClass = rateDiff > 0 ? 'plus' : rateDiff < 0 ? 'minus' : 'neutral';
+          const symbol = rateDiff > 0 ? '↑' : rateDiff < 0 ? '↓' : '→';
+          
+          let smokeLabel = smokeDiff < 0 ? ` (本数 ${Math.abs(smokeDiff)}本減)` : smokeDiff > 0 ? ` (本数 ${smokeDiff}本増)` : '';
+          
+          compHtml = `<span class="diff-badge ${badgeClass}" style="margin-left:8px;">前週比 ${symbol} ${Math.abs(rateDiff)}%${smokeLabel}</span>`;
+        }
+      }
+
+      // 日単位の達成・未達日数から割合（%）を計算
+      const achievedPct = Math.round((m.achievedDays / 7) * 100);
+      const unachievedPct = Math.round((m.unachievedDays / 7) * 100);
+
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.marginBottom = '12px';
+
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <span style="font-weight:bold; font-size:0.85rem;">${w.label}</span>
+          <div>
+            <span style="font-size:0.75rem; color:var(--text-sub);">達成: ${m.achievedDays}/${m.targetObj.targetDays}日</span>
+            ${compHtml}
+          </div>
+        </div>
+
+        <div class="bar-chart-item" style="margin-bottom:6px;">
+          <div class="bar-label">
+            <span>スルー率: ${m.overallRate}% (目標:${m.targetObj.targetRate}%)</span>
+            <span>喫煙: ${m.totalSmokes}本 (${m.totalSmokes * unitPrice}円)</span>
+          </div>
+          <div class="bar-container">
+            <div class="bar-fill primary" style="width: ${m.overallRate}%;"></div>
+          </div>
+        </div>
+
+        <!-- 日単位スルー状況のスタック棒グラフ -->
+        <div style="margin-top: 8px;">
+          <div class="bar-label" style="font-size: 0.75rem; color: var(--text-sub);">
+            <span>日単位のスルー状況 (達成: ${m.achievedDays}日 / 未達: ${m.unachievedDays}日)</span>
+            <span>目標 ${m.targetObj.targetRate}%以上</span>
+          </div>
+          <div class="stacked-bar-container" title="達成: 達成日数, 未達: 未達成日数">
+            <div class="stacked-bar-achieved" style="width: ${achievedPct}%;" title="達成日数: ${m.achievedDays}日"></div>
+            <div class="stacked-bar-unachieved" style="width: ${unachievedPct}%;" title="未達成日数: ${m.unachievedDays}日"></div>
+          </div>
+        </div>
+      `;
+
+      container.appendChild(card);
+    });
+  }
+
+  /* ==================== イベント・ナビゲーション制御 ==================== */
+  function changeDate(days) {
+    currentDate.setDate(currentDate.getDate() + days);
+    updateDailyView();
+  }
+
+  function setDateFromPicker(dateStr) {
+    if (!dateStr) return;
+    const parts = dateStr.split('-');
+    currentDate = new Date(parts[0], parts[1] - 1, parts[2]);
+    updateDailyView();
+  }
+
+  function updateDailyDateDisplay() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
+    const date = currentDate.getDate();
+    const dayLabels = ['日', '月', '火', '水', '木', '金', '土'];
+    const dayName = dayLabels[currentDate.getDay()];
+
+    document.getElementById('daily-date-display').innerText = `${year}年${month}月${date}日 (${dayName})`;
+    
+    const formattedMonth = String(month).padStart(2, '0');
+    const formattedDate = String(date).padStart(2, '0');
+    document.getElementById('daily-date-picker').value = `${year}-${formattedMonth}-${formattedDate}`;
+  }
+
+  function switchView(viewName, btn) {
+    document.querySelectorAll('.view-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    
+    document.getElementById(`view-${viewName}`).classList.add('active');
+    btn.classList.add('active');
+
+    if (viewName === 'analysis') {
+      updateAnalysisView();
+    } else if (viewName === 'trends') {
+      updateTrendsView();
+    }
+  }
+
+  function toggleMemo(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('hidden');
+  }
+
+  function autoFillDates(startDateStr) {
+    if (!startDateStr) return;
+    const startDate = new Date(startDateStr);
+    const dayIds = ['date-sun', 'date-mon', 'date-tue', 'date-wed', 'date-thu', 'date-fri', 'date-sat'];
+    const dayLabels = ['(日)', '(月)', '(火)', '(水)', '(木)', '(金)', '(土)'];
+
+    for (let i = 0; i < 7; i++) {
+      const nextDate = new Date(startDate);
+      nextDate.setDate(startDate.getDate() + i);
+      const month = String(nextDate.getMonth() + 1).padStart(2, '0');
+      const date = String(nextDate.getDate()).padStart(2, '0');
+      
+      const targetEl = document.getElementById(dayIds[i]);
+      if (targetEl) {
+        targetEl.innerText = `${month}/${date} ${dayLabels[i]}`;
+      }
+    }
+  }
+
+  function loadWeeklyPlanForDate(startDate) {
+    const sunday = getSundayOfDate(startDate);
+    const planObj = getWeeklyPlanObj(sunday);
+    const targetObj = getWeeklyTargetObj(sunday);
+
+    document.getElementById('weekly-target-rate').value = targetObj.targetRate;
+    document.getElementById('weekly-target-days').value = targetObj.targetDays;
+
+    for (let i = 0; i < 7; i++) {
+      const sel = document.querySelector(`.seq-select[data-day="${i}"]`);
+      if (sel) {
+        sel.value = planObj[i] || defaultWeeklyConfig[i] || "P-01";
+      }
+    }
+  }
+
+  function renderMasterList() {
+    const listEl = document.getElementById('master-list');
+    listEl.innerHTML = '';
+    masterPatterns.forEach(p => {
+      const item = document.createElement('div');
+      item.className = 'master-item';
+      item.innerHTML = `
+        <div class="master-title">${p.id}: ${p.cat} / ${p.name}</div>
+        <div class="master-seq">シーケンス: ${p.items.join(' → ')}</div>
+        <div class="master-actions">
+          <button onclick="editMasterPattern('${p.id}')">✏️ 編集</button>
+          <button onclick="deleteMasterPattern('${p.id}')" style="color:var(--danger);">🗑️ 削除</button>
+        </div>
+      `;
+      listEl.appendChild(item);
+    });
+    document.getElementById('master-count').innerText = masterPatterns.length;
+  }
+
+  function renderDefaultWeeklySelects() {
+    for (let i = 0; i < 7; i++) {
+      const sel = document.getElementById(`def-plan-${i}`);
+      if (!sel) continue;
+      sel.innerHTML = '';
+      masterPatterns.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.innerText = `${p.cat}：${p.name}`;
+        sel.appendChild(opt);
+      });
+      sel.value = defaultWeeklyConfig[i] || "P-01";
+    }
+
+    const selects = document.querySelectorAll('.seq-select');
+    selects.forEach((select) => {
+      select.innerHTML = '';
+      masterPatterns.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.innerText = `${p.cat}：${p.name}`;
+        select.appendChild(opt);
+      });
+    });
+  }
+
+  function saveDefaultWeeklyPlanConfig() {
+    for (let i = 0; i < 7; i++) {
+      const sel = document.getElementById(`def-plan-${i}`);
+      if (sel) {
+        defaultWeeklyConfig[i] = sel.value;
+      }
+    }
+    localStorage.setItem(STORAGE_KEY_DEF_WEEKLY, JSON.stringify(defaultWeeklyConfig));
+  }
+
+  function saveWeeklyPlan() {
+    const startDateVal = document.getElementById('start-date').value;
+    if (!startDateVal) {
+      alert("対象週の開始日を選択してください。");
+      return;
+    }
+    const sunday = getSundayOfDate(new Date(startDateVal));
+    const sundayKey = formatDateKey(sunday);
+
+    const planObj = {};
+    const selects = document.querySelectorAll('.seq-select');
+    selects.forEach((sel) => {
+      const day = sel.getAttribute('data-day');
+      planObj[day] = sel.value;
+    });
+
+    weeklyPlansByWeek[sundayKey] = planObj;
+    saveData(STORAGE_KEY_WEEKLY_PLANS, weeklyPlansByWeek);
+
+    const targetRate = parseInt(document.getElementById('weekly-target-rate').value) || 50;
+    const targetDays = parseInt(document.getElementById('weekly-target-days').value) || 4;
+    
+    weeklyTargetsByWeek[sundayKey] = { targetRate, targetDays };
+    saveData(STORAGE_KEY_WEEKLY_TARGETS, weeklyTargetsByWeek);
+
+    alert("週間計画と目標を保存しました！");
+    updateDailyView();
+  }
+</script>
+</body>
+</html>
